@@ -1,0 +1,118 @@
+#checking correlations of age and EOD length
+
+library(lsmeans)
+library(ggplot2)
+
+#upload data, check
+EODsize<-read.csv("C:/Users/Savvas Constantinou/Desktop/712/CRISPR_EOD_length.csv")
+head(EODsize)
+
+#how well does age correlate to EOD amplitude?
+agefit <- lm(amplitude~Age, EODsize)
+summary(agefit)$adj.r.squared  
+resid(agefit)
+plot(density(resid(agefit)))
+qqnorm(resid(agefit))
+qqline(resid(agefit))
+
+#how well does length correlate to EOD amplitude?
+mmfit <- lm(amplitude~Length, EODsize)
+summary(mmfit)$adj.r.squared  
+resid(mmfit)
+plot(density(resid(mmfit)))
+qqnorm(resid(mmfit))
+qqline(resid(mmfit))
+
+#how closely is amplitude correlated with Age andn with length
+cor(EODsize$Age, EODsize$amplitude)
+cor(EODsize$Length, EODsize$amplitude)
+
+#Length seems like a better variable to track EOD amplitude than Age
+#How does fit behave with just WT
+EODWT<-EODsize[which(EODsize$Treatment=='WT'),]
+EODWTfit<- lm(amplitude~Length, EODWT)
+summary(EODWTfit)$adj.r.squared
+resid(EODWTfit)
+plot(density(resid(EODWTfit)))
+qqnorm(resid(EODWTfit))
+qqline(resid(EODWTfit))
+
+cor(EODWT$Length, EODWT$amplitude)
+
+#plot EOD amplitude vs length
+p<- ggplot (data=EODsize, aes(x=EODsize$Length, y=EODsize$amplitude, color=as.factor(EODsize$Treatment)))
+p + ggtitle("Juvenile B. gauderio amplitude vs length") +
+  xlab("length (mm)") +
+  ylab("EOD amplitude") +
+  labs(color="Treatment") +
+  geom_point(size=2) +
+  geom_smooth(data=subset(EODsize, Treatment== "WT"), 
+              aes(x=Length, y=amplitude, color=as.factor(Treatment)), method='lm', se=FALSE) +
+  geom_smooth(data=subset(EODsize, Treatment== "CRISPR"), 
+              aes(x=Length, y=amplitude, color=as.factor(Treatment)), method='lm', se=FALSE) +
+  geom_smooth(data=subset(EODsize, Treatment== "CRISPR1"), 
+              aes(x=Length, y=amplitude, color=as.factor(Treatment)), method='lm', se=FALSE) +
+  geom_smooth(data=subset(EODsize, Treatment== "CRISPR2"), 
+              aes(x=Length, y=amplitude, color=as.factor(Treatment)), method='lm', se=FALSE) +
+  geom_smooth(data=subset(EODsize, Treatment== "CRISPR3"), 
+              aes(x=Length, y=amplitude, color=as.factor(Treatment)), method='lm', se=FALSE)
+#model selection
+one.way <- lm(amplitude ~ Length, data= EODsize)
+two.way <- lm(amplitude ~ Length + Treatment, data= EODsize)
+interaction <- aov(amplitude ~ Length*Treatment, data= EODsize)
+
+
+model.set <- list(one.way, two.way, interaction)
+model.names <- c("one.way", "two.way", "interaction")
+
+aictab(model.set, modnames = model.names)
+#interaction is lowest AIC
+
+summary(interaction)
+
+#determine if slopes are different
+m.interaction <- lm(amplitude~Length*Treatment, data=EODsize)
+anova(m.interaction)
+m.interaction$coefficients
+m.lst <- lstrends(m.interaction, "Treatment", var="Length")
+pairs(m.lst)
+
+
+#age over time
+#plot EOD amplitude vs length
+pp<- ggplot (data=EODsize, aes(x=EODsize$Age, y=EODsize$Length, color=as.factor(EODsize$Treatment)))
+pp + ggtitle("Juvenile B. gauderio length vs age") +
+  xlab("Age (days)") +
+  ylab("Length (mm)") +
+  labs(color="Treatment") +
+  geom_point(size=2) +
+  geom_smooth(data=subset(EODsize, Treatment== "WT"), 
+              aes(x=Age, y=Length, color=as.factor(Treatment)), method='lm', se=FALSE) +
+  geom_smooth(data=subset(EODsize, Treatment== "CRISPR"), 
+              aes(x=Age, y=Length, color=as.factor(Treatment)), method='lm', se=FALSE) +
+  geom_smooth(data=subset(EODsize, Treatment== "CRISPR1"), 
+              aes(x=Age, y=Length, color=as.factor(Treatment)), method='lm', se=FALSE) +
+  geom_smooth(data=subset(EODsize, Treatment== "CRISPR2"), 
+              aes(x=Age, y=Length, color=as.factor(Treatment)), method='lm', se=FALSE) +
+  geom_smooth(data=subset(EODsize, Treatment== "CRISPR3"), 
+              aes(x=Age, y=Length, color=as.factor(Treatment)), method='lm', se=FALSE)
+#model selection
+one.way <- lm(amplitude ~ Length, data= EODsize)
+two.way <- lm(amplitude ~ Length + Treatment, data= EODsize)
+interaction <- aov(amplitude ~ Length*Treatment, data= EODsize)
+
+
+model.set <- list(one.way, two.way, interaction)
+model.names <- c("one.way", "two.way", "interaction")
+
+aictab(model.set, modnames = model.names)
+#interaction is lowest AIC
+
+summary(interaction)
+
+#determine if slopes are different
+m.interaction <- lm(amplitude~Length*Treatment, data=EODsize)
+anova(m.interaction)
+m.interaction$coefficients
+m.lst <- lstrends(m.interaction, "Treatment", var="Length")
+pairs(m.lst)
