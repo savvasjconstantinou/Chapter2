@@ -1,0 +1,28 @@
+#code to visualize amplitude of CRISPR vs uninjected and run statistics 
+#BB
+#upload data, check
+BBamp<-read.csv("C:/Users/Savvas Constantinou/Desktop/BBAmp.csv")
+head(BBamp)
+
+#group amp by individual
+boxplot(BBamp[,4]~BBamp[,1])
+
+#group amp by treatment
+boxplot(BBamp[,4]~BBamp[,2], main="Brienomyrus brachyistius EOD amplitude", xlab="Treatment", ylab="Amplitude (mV/cm)")
+
+C<- subset(BBamp, Group== "CRISPR", select=c(Amp) )
+u<-subset(BBamp, Group== "uninjected", select=c(Amp) )
+t.test(u,C, paired=FALSE)
+
+#BG
+#upload data, check
+BGamp<-read.csv("C:/Users/Savvas Constantinou/Desktop/BGamp.csv")
+head(BGamp)
+
+#group amp by treatment
+boxplot(BGamp[,4]~BGamp[,2], main="Brachyhypopomus gauderio EOD amplitude", xlab="Treatment", ylab="Amplitude (mV/cm)")
+
+CBg<- subset(BGamp, Group== "CRISPR", select=c(Amp) )
+uBg<-subset(BGamp, Group== "uninjected ", select=c(Amp) )
+t.test(uBg,CBg, paired=FALSE)
+
