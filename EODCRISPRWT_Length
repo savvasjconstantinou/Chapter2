@@ -1,0 +1,50 @@
+library(AICcmodavg)
+library(lsmeans)
+library(ggplot2)
+
+EODsize<-read.csv("C:/Users/Savvas Constantinou/Desktop/WTCRISPRBgFULL.csv")
+head(EODsize)
+EODsize$Group <-as.factor(EODsize$Group)
+
+#plot EOD amplitude vs length
+p<- ggplot (data=EODsize, aes(x=Length, y=Amplitude, color=as.factor(Group)))
+p + ggtitle("Juvenile B. gauderio amplitude vs length") +
+  xlab("Length (mm)") +
+  ylab("EOD amplitude") +
+  labs(color="Group") +
+  geom_point(size=2) +
+  geom_smooth(data=subset(EODsize, Group== "WT"),
+              aes(x=Length, y=Amplitude, color=as.factor(Group)), method='lm', se=FALSE) +
+  geom_smooth(data=subset(EODsize, Group== "CRISPR"), 
+              aes(x=Length, y=Amplitude, color=as.factor(Group)), method='lm', se=FALSE) 
+#model selection
+one.way <- lm(Amplitude ~ Length, data= EODsize)
+two.way <- lm(Amplitude ~ Length + Group, data= EODsize)
+interaction <- lm(Amplitude ~ Length*Group, data= EODsize)
+
+
+model.set <- list(one.way, two.way, interaction)
+model.names <- c("one.way", "two.way", "interaction")
+
+aictab(model.set, modnames = model.names)
+#interaction is lowest AIC
+
+summary(interaction)
+
+#determine if groups are different
+lee <- lm(Amplitude~Length*Group, data=EODsize)
+summary(lee)
+#what groups different?
+m.lst <- lstrends(lee, "Group", var="Length")
+pairs(m.lst)
+
+library(lm.beta)
+# standardize and get betas
+lm.final.beta <- lm.beta(lee)
+print(lm.final.beta)
+summary(lm.final.beta)
+coef(lm.final.beta)
+
+
+#check where data lies in groups to know how many EOD in each dot
+addmargins(xtabs(~Length + Group, data=EODsize))
