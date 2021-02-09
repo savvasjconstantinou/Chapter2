@@ -1,3 +1,5 @@
+#code to check for amplitude differences in CRISPR and WT for fig 9
+
 #bring data in
 Bg <- read.csv("C:/Users/Savvas Constantinou/Desktop/WTCRISPRBg.csv", header = TRUE, colClasses = c("numeric", "factor", "factor", "factor"))
 head(Bg)
