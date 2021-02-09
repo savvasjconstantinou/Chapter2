@@ -1,4 +1,4 @@
-#code to visualize amplitude of CRISPR vs uninjected and run statistics 
+#code to visualize amplitude of CRISPR vs uninjected and run statistics - fig 7
 #BB
 #upload data, check
 BBamp<-read.csv("C:/Users/Savvas Constantinou/Desktop/BBAmp.csv")
