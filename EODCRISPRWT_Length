@@ -1,5 +1,3 @@
-#figure 8
-
 library(AICcmodavg)
 library(lsmeans)
 library(ggplot2)
@@ -8,45 +6,52 @@ EODsize<-read.csv("C:/Users/Savvas Constantinou/Desktop/WTCRISPRBgFULL.csv")
 head(EODsize)
 EODsize$Group <-as.factor(EODsize$Group)
 
-#plot EOD amplitude vs length
-p<- ggplot (data=EODsize, aes(x=Length, y=Amplitude, color=as.factor(Group)))
-p + ggtitle("Juvenile B. gauderio amplitude vs length") +
-  xlab("Length (mm)") +
-  ylab("EOD amplitude") +
-  labs(color="Group") +
-  geom_point(size=2) +
-  geom_smooth(data=subset(EODsize, Group== "WT"),
-              aes(x=Length, y=Amplitude, color=as.factor(Group)), method='lm', se=FALSE) +
+#subset for WT
+WT <- subset(EODsize, Group == "WT")
+WT <- droplevels(WT)
+summary(WT)
+
+#create data frame of averages for WT
+df_summary <- data.frame(Length=unique(WT$Length), n=tapply(WT$Amplitude, WT$Length, length), 
+                         mean=tapply(WT$Amplitude, WT$Length, mean))
+#calc standard error of mean after standard deviation
+df_summary$sd <- tapply(WT$Amplitude, WT$Length, sd)
+df_summary$sem <- df_summary$sd/sqrt(df_summary$n-1)
+head(df_summary)
+#calc 95% CI
+df_summary$CI_lower <- df_summary$mean + qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+df_summary$CI_upper <- df_summary$mean - qt((1-0.95)/2, df=df_summary$n-1)*df_summary$sem
+head(df_summary)
+df_summary$Amplitude<-df_summary$mean
+
+#when I ran the above the length variable did not match up with the means, I exported the data,
+#write.csv(df_summary, "C:/Users/Savvas Constantinou/Desktop/summary.csv", row.names = FALSE)
+#resorted the length column from smallest to largest in excel and reuploaded to generate graph below
+#df_summary<-read.csv("C:/Users/Savvas Constantinou/Desktop/summary.csv", header= TRUE)
+
+#plot WT with 95% CI and lin reg of crispants
+ggplot(df_summary, aes(x=Length, y=Amplitude)) + 
+  geom_point(color='black', size = 2) + 
+  geom_smooth(method=lm, color='black', se=TRUE, fill="lightgray") + 
+  #add lm predictor for crispants
+  geom_point(data=subset(EODsize, Group== "CRISPR"), 
+             aes(x=Length, y=Amplitude, color=as.factor(Group))) +
   geom_smooth(data=subset(EODsize, Group== "CRISPR"), 
-              aes(x=Length, y=Amplitude, color=as.factor(Group)), method='lm', se=FALSE) 
-#model selection
-one.way <- lm(Amplitude ~ Length, data= EODsize)
-two.way <- lm(Amplitude ~ Length + Group, data= EODsize)
-interaction <- lm(Amplitude ~ Length*Group, data= EODsize)
+              aes(x=Length, y=Amplitude, color=as.factor(Group)), method=lm, se=FALSE) +
+  geom_point(data=subset(EODsize, Group== "CRISPR1"), 
+             aes(x=Length, y=Amplitude, color=as.factor(Group))) +
+  geom_smooth(data=subset(EODsize, Group== "CRISPR1"),
+              aes(x=Length, y=Amplitude, color=as.factor(Group)), method=lm, se=FALSE) +
+  geom_point(data=subset(EODsize, Group== "CRISPR2"), 
+             aes(x=Length, y=Amplitude, color=as.factor(Group))) +
+  geom_smooth(data=subset(EODsize, Group== "CRISPR2"),
+              aes(x=Length, y=Amplitude, color=as.factor(Group)), method=lm, se=FALSE) +
+  geom_point(data=subset(EODsize, Group== "CRISPR3"), 
+             aes(x=Length, y=Amplitude, color=as.factor(Group))) +
+  geom_smooth(data=subset(EODsize, Group== "CRISPR3"),
+              aes(x=Length, y=Amplitude, color=as.factor(Group)), method=lm, se=FALSE) +
+  theme_classic()
 
-
-model.set <- list(one.way, two.way, interaction)
-model.names <- c("one.way", "two.way", "interaction")
-
-aictab(model.set, modnames = model.names)
-#interaction is lowest AIC
-
-summary(interaction)
-
-#determine if groups are different
-lee <- lm(Amplitude~Length*Group, data=EODsize)
-summary(lee)
-#what groups different?
-m.lst <- lstrends(lee, "Group", var="Length")
-pairs(m.lst)
-
-library(lm.beta)
-# standardize and get betas
-lm.final.beta <- lm.beta(lee)
-print(lm.final.beta)
-summary(lm.final.beta)
-coef(lm.final.beta)
-
-
-#check where data lies in groups to know how many EOD in each dot
-addmargins(xtabs(~Length + Group, data=EODsize))
+#model
+one.way <- lm(Amplitude ~ Length, data= df_summary)
+summary(one.way)
